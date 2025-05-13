@@ -23,7 +23,18 @@ def login(request, *args, **kwargs):
         else:
             auth.login(request, user)
             user_detail = Users.objects.filter(user_id=user.id).first()
-            staff_id = staff.objects.filter(openid=user_detail.openid, staff_name=str(user_detail.name)).first().id
+            
+            # 修复部分：添加检查确保 staff 对象存在
+            staff_obj = staff.objects.filter(openid=user_detail.openid, staff_name=str(user_detail.name)).first()
+            if staff_obj is None:
+                # 如果找不到对应的 staff 记录，返回错误信息
+                err_ret = FBMsg.err_ret()
+                err_ret['ip'] = ip
+                err_ret['data'] = data
+                err_ret['msg'] = "未找到对应的员工记录"
+                return JsonResponse(err_ret)
+                
+            staff_id = staff_obj.id
             data = {
                 "name": data['name'],
                 'openid': user_detail.openid,
